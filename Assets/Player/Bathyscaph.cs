@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 
 public class Bathyscaph : MonoBehaviour
 {
 	[SerializeField] private float _accelerationSpeed;
+	[SerializeField] private float _diveSpeed;
 
 	[SerializeField] private float _turnSpeed;
 	[SerializeField] private float _lookAtSpeed;
@@ -11,6 +13,9 @@ public class Bathyscaph : MonoBehaviour
 	[SerializeField] private float _lookAtMin;
 
 	[SerializeField] private float _interactionDistance;
+
+	private float _oxygen;
+	private float _safety;
 
 	private float _turnValue;
 	private float _lookAtValue;
@@ -23,6 +28,9 @@ public class Bathyscaph : MonoBehaviour
 	{
 		_cachedTransform = transform;
 		_rigidbody = GetComponent<Rigidbody>();
+
+		_oxygen = 100;
+		_safety = 100;
 	}
 
 	private void Update()
@@ -45,6 +53,13 @@ public class Bathyscaph : MonoBehaviour
 				}
 			}
 		}
+
+		if(_oxygen > 0)
+		{
+			_oxygen = Mathf.MoveTowards(_oxygen, 0, Time.deltaTime / 4);
+		}
+
+		Debug.Log($"Oxygen: {_oxygen} Safety: {_safety} Speed: {_rigidbody.velocity.magnitude}");
 	}
 
 	private void CalcRotation()
@@ -69,6 +84,44 @@ public class Bathyscaph : MonoBehaviour
 			_rigidbody.AddForce(-_cachedTransform.forward * _accelerationSpeed, ForceMode.Acceleration);
 		}
 
+		if (Input.GetButton("Dive"))
+		{
+			_rigidbody.AddForce(Vector3.down * _diveSpeed, ForceMode.Acceleration);
+		}
+
 		_rigidbody.velocity *= 0.98f;
+	}
+
+	private void OnCollisionEnter(Collision collision)
+	{
+		IContactable contactable = collision.gameObject.GetComponent<IContactable>();
+
+		if (contactable != null)
+		{
+			contactable.Contact(this);
+		}
+	}
+
+	public void ApplyDamage(GameObject sender, float amount)
+	{
+		Debug.Log(sender);
+
+		Transform senderTransform = sender.transform;
+		
+		if (senderTransform != null)
+		{
+			Vector3 directionFromSender = (_cachedTransform.position - senderTransform.position).normalized;
+		
+			_rigidbody.AddForce(directionFromSender * amount, ForceMode.Impulse);
+		}
+
+		if(_safety - amount > 0)
+		{
+			_safety -= amount;
+		}
+		else
+		{
+			_safety = 0;
+		}
 	}
 }
