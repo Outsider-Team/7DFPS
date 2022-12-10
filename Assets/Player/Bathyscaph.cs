@@ -76,13 +76,6 @@ public class Bathyscaph : MonoBehaviour
 			}
 		}
 
-		if (_isDragging)
-		{
-			_puller.position = Vector3.Lerp(_puller.position,
-											_cachedTransform.position + _cachedTransform.forward * 2.5f,
-											Time.deltaTime * 4);
-		}
-
 		if(_oxygen > 0)
 		{
 			_oxygen = Mathf.MoveTowards(_oxygen, 0, Time.deltaTime / 4);
@@ -140,6 +133,13 @@ public class Bathyscaph : MonoBehaviour
 	{
 		CalcRotation();
 		CalcMovement();
+
+		if (_isDragging)
+		{
+			_puller.position = Vector3.Lerp(_puller.position,
+											_cachedTransform.position + _cachedTransform.forward * 2.5f,
+											Time.deltaTime * 4);
+		}
 	}
 
 	private void OnCollisionEnter(Collision collision)
