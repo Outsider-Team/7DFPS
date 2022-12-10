@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class Bathyscaph : MonoBehaviour
 {
+	public event Action<GameObject, float> Damaged;
+	public event Action Death;
+
 	[SerializeField] private float _accelerationSpeed;
 	[SerializeField] private float _diveSpeed;
 
@@ -13,6 +16,11 @@ public class Bathyscaph : MonoBehaviour
 	[SerializeField] private float _lookAtMin;
 
 	[SerializeField] private float _interactionDistance;
+
+	[SerializeField] private float _sleepModeMaxTime;
+
+	private bool _sleepMode;
+	private float _sleepModeTime;
 
 	private float _oxygen;
 	private float _safety;
@@ -59,6 +67,26 @@ public class Bathyscaph : MonoBehaviour
 			_oxygen = Mathf.MoveTowards(_oxygen, 0, Time.deltaTime / 4);
 		}
 
+		if (_sleepMode)
+		{
+			if(_sleepModeTime > 0)
+			{
+				if(_sleepModeTime - Time.deltaTime > 0)
+				{
+					_sleepModeTime -= Time.deltaTime;
+				}
+				else
+				{
+					_sleepModeTime = 0;
+				}
+			}
+			else
+			{
+				_rigidbody.useGravity = false;
+				_sleepMode = false;
+			}
+		}
+
 		Debug.Log($"Oxygen: {_oxygen} Safety: {_safety} Speed: {_rigidbody.velocity.magnitude}");
 	}
 
@@ -102,26 +130,46 @@ public class Bathyscaph : MonoBehaviour
 		}
 	}
 
+	private void OnDamaged(GameObject sender, float amount)
+	{
+		Transform senderTransform = sender.transform;
+
+		if (senderTransform != null)
+		{
+			Vector3 directionFromSender = (_cachedTransform.position - senderTransform.position).normalized;
+
+			_rigidbody.AddForce(directionFromSender * amount, ForceMode.Impulse);
+		}
+
+
+		_rigidbody.useGravity = true;
+
+		_sleepMode = true;
+		_sleepModeTime = _sleepModeMaxTime;
+	}
+
+	private void OnDeath()
+	{
+
+	}
+
 	public void ApplyDamage(GameObject sender, float amount)
 	{
 		Debug.Log(sender);
 
-		Transform senderTransform = sender.transform;
-		
-		if (senderTransform != null)
-		{
-			Vector3 directionFromSender = (_cachedTransform.position - senderTransform.position).normalized;
-		
-			_rigidbody.AddForce(directionFromSender * amount, ForceMode.Impulse);
-		}
+		Damaged?.Invoke(sender, amount);
+		OnDamaged(sender, amount);
 
-		if(_safety - amount > 0)
+		if (_safety - amount > 0)
 		{
 			_safety -= amount;
 		}
 		else
 		{
 			_safety = 0;
+
+			Death?.Invoke();
+			OnDeath();
 		}
 	}
 }
