@@ -86,6 +86,7 @@ MonoBehaviour:
   _lookAtMin: -90
   _interactionDistance: 3
   _sleepModeMaxTime: 0
+  _claws: {fileID: 0}
 --- !u!1 &3697446829898323956
 GameObject:
   m_ObjectHideFlags: 0

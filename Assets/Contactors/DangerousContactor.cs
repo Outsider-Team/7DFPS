@@ -6,8 +6,6 @@ public class DangerousContactor : Contactor
 
 	protected override void OnContact(Bathyscaph bathyscaph)
 	{
-		base.OnContact(bathyscaph);
-
 		bathyscaph.ApplyDamage(gameObject, _damageAmount);
 	}
 }
