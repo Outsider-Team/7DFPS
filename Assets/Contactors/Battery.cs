@@ -2,9 +2,9 @@
 
 public class Battery : MonoBehaviour, IContactable
 {
-	public void Contact(object sender)
+	public void Contact(Transform sender)
 	{
-		Generator generator = (Generator)sender;
+		Generator generator = sender.GetComponent<Generator>();
 
 		if(generator != null)
 		{

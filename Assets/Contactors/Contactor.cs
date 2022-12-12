@@ -4,9 +4,9 @@ public abstract class Contactor : MonoBehaviour, IContactable
 {
 	protected abstract void OnContact(Bathyscaph bathyscaph);
 
-	public void Contact(object sender)
+	public void Contact(Transform sender)
 	{
-		Bathyscaph bathyscaph = (Bathyscaph)sender;
+		Bathyscaph bathyscaph = sender.GetComponent<Bathyscaph>();
 
 		if(bathyscaph != null)
 		{

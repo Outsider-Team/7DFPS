@@ -1,4 +1,6 @@
+using UnityEngine;
+
 interface IContactable
 {
-	void Contact(object sender);
+	void Contact(Transform sender);
 }
