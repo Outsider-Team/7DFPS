@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class Bathyscaph : MonoBehaviour
 {
 	public event Action<GameObject, float> Damaged;
@@ -25,6 +26,12 @@ public class Bathyscaph : MonoBehaviour
 	private float _oxygen;
 	private float _safety;
 
+	private bool _isGrabbing;
+	private GrabInteractive _grabInteractive;
+
+	private bool _isDragging;
+	private Transform _puller;
+
 	private float _turnValue;
 	private float _lookAtValue;
 
@@ -39,25 +46,32 @@ public class Bathyscaph : MonoBehaviour
 
 		_oxygen = 100;
 		_safety = 100;
+
+		_isGrabbing = false;
 	}
 
 	private void Update()
 	{
-		CalcRotation();
-		CalcMovement();
-
 		if (Input.GetButtonDown("Interact"))
 		{
-			Ray ray = new(_cachedTransform.position, _cachedTransform.forward);
-			bool hit = Physics.Raycast(ray, out RaycastHit raycastHit, _interactionDistance);
-			
-			if (hit)
+			if (_isGrabbing)
 			{
-				IInteractable interactive = raycastHit.collider.GetComponent<IInteractable>();
+				_isGrabbing = false;
+				_grabInteractive.StopInteraction(this);
+			}
+			else
+			{
+				Ray ray = new(_cachedTransform.position, _cachedTransform.forward);
+				bool hit = Physics.Raycast(ray, out RaycastHit raycastHit, _interactionDistance);
 
-				if (interactive != null)
+				if (hit)
 				{
-					interactive.Interact(this);
+					IInteractable interactive = raycastHit.collider.GetComponent<IInteractable>();
+
+					if (interactive != null)
+					{
+						interactive.Interact(this);
+					}
 				}
 			}
 		}
@@ -112,12 +126,20 @@ public class Bathyscaph : MonoBehaviour
 			_rigidbody.AddForce(-_cachedTransform.forward * _accelerationSpeed, ForceMode.Acceleration);
 		}
 
-		if (Input.GetButton("Dive"))
-		{
-			_rigidbody.AddForce(Vector3.down * _diveSpeed, ForceMode.Acceleration);
-		}
-
 		_rigidbody.velocity *= 0.98f;
+	}
+
+	private void FixedUpdate()
+	{
+		CalcRotation();
+		CalcMovement();
+
+		if (_isDragging)
+		{
+			_puller.position = Vector3.Lerp(_puller.position,
+											_cachedTransform.position + _cachedTransform.forward * 2.5f,
+											Time.deltaTime * 4);
+		}
 	}
 
 	private void OnCollisionEnter(Collision collision)
@@ -171,5 +193,23 @@ public class Bathyscaph : MonoBehaviour
 			Death?.Invoke();
 			OnDeath();
 		}
+	}
+
+	public void Grab(GrabInteractive grabInteractive)
+	{
+		_grabInteractive = grabInteractive;
+		_isGrabbing = true;
+	}
+
+	public void Drag(Transform puller)
+	{
+		_isDragging = true;
+		_puller = puller;
+	}
+
+	public void Drop()
+	{
+		_isDragging = false;
+		_puller = null;
 	}
 }

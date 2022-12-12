@@ -1,11 +1,8 @@
 ﻿using UnityEngine;
 
-public class Contactor : MonoBehaviour, IContactable
+public abstract class Contactor : MonoBehaviour, IContactable
 {
-	protected virtual void OnContact(Bathyscaph bathyscaph)
-	{
-		Debug.Log("Contact");
-	}
+	protected abstract void OnContact(Bathyscaph bathyscaph);
 
 	public void Contact(object sender)
 	{
