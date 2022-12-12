@@ -25,7 +25,7 @@ public class Generator : MonoBehaviour
 
 		if (contactable != null)
 		{
-			contactable.Contact(this);
+			contactable.Contact(transform);
 		}
 	}
 

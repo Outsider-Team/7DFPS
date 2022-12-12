@@ -4,6 +4,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Bathyscaph : MonoBehaviour
 {
+	public event Action<float> SafetyChanged;
+	public event Action<float> OxygenChanged;
+
 	public event Action<GameObject, float> Damaged;
 	public event Action Death;
 
@@ -19,6 +22,10 @@ public class Bathyscaph : MonoBehaviour
 	[SerializeField] private float _interactionDistance;
 
 	[SerializeField] private float _sleepModeMaxTime;
+
+	private bool _canControl;
+
+	private bool _isDeath;
 
 	private bool _sleepMode;
 	private float _sleepModeTime;
@@ -48,11 +55,16 @@ public class Bathyscaph : MonoBehaviour
 		_safety = 100;
 
 		_isGrabbing = false;
+
+		_canControl = true;
+
+		Cursor.visible = false;
+		Cursor.lockState = CursorLockMode.Locked;
 	}
 
 	private void Update()
 	{
-		if (Input.GetButtonDown("Interact"))
+		if (Input.GetButtonDown("Interact") && _canControl)
 		{
 			if (_isGrabbing)
 			{
@@ -79,6 +91,17 @@ public class Bathyscaph : MonoBehaviour
 		if(_oxygen > 0)
 		{
 			_oxygen = Mathf.MoveTowards(_oxygen, 0, Time.deltaTime / 4);
+			OxygenChanged?.Invoke(_oxygen);
+		}
+		else
+		{
+			if (!_isDeath)
+			{
+				_isDeath = true;
+
+				Death?.Invoke();
+				OnDeath();
+			}
 		}
 
 		if (_sleepMode)
@@ -131,8 +154,11 @@ public class Bathyscaph : MonoBehaviour
 
 	private void FixedUpdate()
 	{
-		CalcRotation();
-		CalcMovement();
+		if (_canControl) 
+		{
+			CalcRotation();
+			CalcMovement();
+		}
 
 		if (_isDragging)
 		{
@@ -148,7 +174,7 @@ public class Bathyscaph : MonoBehaviour
 
 		if (contactable != null)
 		{
-			contactable.Contact(this);
+			contactable.Contact(_cachedTransform);
 		}
 	}
 
@@ -172,7 +198,7 @@ public class Bathyscaph : MonoBehaviour
 
 	private void OnDeath()
 	{
-
+		_canControl = false;
 	}
 
 	public void ApplyDamage(GameObject sender, float amount)
@@ -190,9 +216,13 @@ public class Bathyscaph : MonoBehaviour
 		{
 			_safety = 0;
 
+			_isDeath = true;
+
 			Death?.Invoke();
 			OnDeath();
 		}
+
+		SafetyChanged?.Invoke(_safety);
 	}
 
 	public void Grab(GrabInteractive grabInteractive)
